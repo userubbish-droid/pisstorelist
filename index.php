@@ -33,8 +33,11 @@ function redirect_to(string $url): void {
     exit;
 }
 
-if ($page === '' || $page === 'home') {
-    if (current_user_id()) redirect_to('/index.php?page=home');
+// Landing: only redirect when no page specified.
+if ($page === '') {
+    if (current_user_id()) {
+        redirect_to('/index.php?page=home');
+    }
     redirect_to('/index.php?page=login');
 }
 
