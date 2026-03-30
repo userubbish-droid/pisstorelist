@@ -69,6 +69,58 @@ function list_movements(?int $item_id, int $limit = 300): array {
     return $stmt->fetchAll();
 }
 
+/**
+ * Filters:
+ * - q: item name contains (case-insensitive)
+ * - kind: 'IN' | 'OUT' | ''
+ * - from: 'YYYY-MM-DD'
+ * - to: 'YYYY-MM-DD'
+ */
+function list_movements_filtered(array $filters, int $limit = 300): array {
+    $where = [];
+    $params = [];
+
+    $q = trim((string)($filters['q'] ?? ''));
+    if ($q !== '') {
+        $where[] = 'LOWER(i.name) LIKE ?';
+        $params[] = '%' . mb_strtolower($q) . '%';
+    }
+
+    $kind = (string)($filters['kind'] ?? '');
+    if ($kind === 'IN' || $kind === 'OUT') {
+        $where[] = 'm.kind = ?';
+        $params[] = $kind;
+    }
+
+    $from = trim((string)($filters['from'] ?? ''));
+    if ($from !== '') {
+        $where[] = 'm.created_at >= ?';
+        $params[] = $from . ' 00:00:00';
+    }
+
+    $to = trim((string)($filters['to'] ?? ''));
+    if ($to !== '') {
+        $where[] = 'm.created_at <= ?';
+        $params[] = $to . ' 23:59:59';
+    }
+
+    $sql =
+        "SELECT m.*, i.name AS item_name, i.unit AS item_unit
+         FROM movements m
+         JOIN items i ON i.id = m.item_id";
+
+    if (!empty($where)) {
+        $sql .= " WHERE " . implode(' AND ', $where);
+    }
+
+    $sql .= " ORDER BY m.id DESC LIMIT ?";
+    $params[] = $limit;
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+
 function low_stock_items(): array {
     $q = db()->query(
         "SELECT i.*,

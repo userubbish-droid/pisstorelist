@@ -322,11 +322,47 @@ if ($page === 'item') {
 }
 
 if ($page === 'movements') {
-    $moves = list_movements(null, 300);
+    $filters = [
+        'q' => (string)($_GET['q'] ?? ''),
+        'kind' => (string)($_GET['kind'] ?? ''),
+        'from' => (string)($_GET['from'] ?? ''),
+        'to' => (string)($_GET['to'] ?? ''),
+    ];
+    $moves = list_movements_filtered($filters, 300);
     ob_start(); ?>
     <div>
       <h2 class="text-lg font-semibold">Movements (latest 300)</h2>
       <p class="text-sm text-slate-600 mt-1">All stock-in and stock-out records appear here.</p>
+    </div>
+    <div class="mt-4 bg-white border rounded-xl p-4">
+      <form class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end" method="get" action="/index.php">
+        <input type="hidden" name="page" value="movements" />
+        <div class="md:col-span-2">
+          <label class="text-sm text-slate-700">Item contains</label>
+          <input name="q" value="<?= h((string)$filters['q']) ?>" class="mt-1 w-full border rounded px-3 py-2" placeholder="e.g. rice" />
+        </div>
+        <div>
+          <label class="text-sm text-slate-700">Type</label>
+          <select name="kind" class="mt-1 w-full border rounded px-3 py-2">
+            <option value="" <?= $filters['kind']==='' ? 'selected' : '' ?>>All</option>
+            <option value="IN" <?= $filters['kind']==='IN' ? 'selected' : '' ?>>IN</option>
+            <option value="OUT" <?= $filters['kind']==='OUT' ? 'selected' : '' ?>>OUT</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-slate-700">From</label>
+          <input type="date" name="from" value="<?= h((string)$filters['from']) ?>" class="mt-1 w-full border rounded px-3 py-2" />
+        </div>
+        <div>
+          <label class="text-sm text-slate-700">To</label>
+          <input type="date" name="to" value="<?= h((string)$filters['to']) ?>" class="mt-1 w-full border rounded px-3 py-2" />
+        </div>
+        <div class="md:col-span-5 flex items-center gap-2">
+          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">Filter</button>
+          <a class="px-4 py-2 rounded border bg-white hover:bg-slate-50" href="/index.php?page=movements">Reset</a>
+          <a class="px-4 py-2 rounded border bg-white hover:bg-slate-50" href="/index.php?page=movements_export&q=<?= urlencode((string)$filters['q']) ?>&kind=<?= urlencode((string)$filters['kind']) ?>&from=<?= urlencode((string)$filters['from']) ?>&to=<?= urlencode((string)$filters['to']) ?>">Export CSV</a>
+        </div>
+      </form>
     </div>
     <div class="mt-6 bg-white border rounded-xl overflow-hidden">
       <table class="w-full text-sm">
@@ -365,6 +401,101 @@ if ($page === 'movements') {
     <?php
     $html = (string)ob_get_clean();
     render('Movements - ' . APP_NAME, $html, true);
+}
+
+if ($page === 'movements_export') {
+    $filters = [
+        'q' => (string)($_GET['q'] ?? ''),
+        'kind' => (string)($_GET['kind'] ?? ''),
+        'from' => (string)($_GET['from'] ?? ''),
+        'to' => (string)($_GET['to'] ?? ''),
+    ];
+    $moves = list_movements_filtered($filters, 5000);
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="movements.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['time', 'item', 'type', 'quantity', 'unit', 'note']);
+    foreach ($moves as $m) {
+        fputcsv($out, [
+            (string)$m['created_at'],
+            (string)$m['item_name'],
+            (string)$m['kind'],
+            fmt_num((float)$m['qty']),
+            (string)$m['item_unit'],
+            (string)($m['note'] ?? ''),
+        ]);
+    }
+    fclose($out);
+    exit;
+}
+
+if ($page === 'help') {
+    ob_start(); ?>
+    <div>
+      <h2 class="text-lg font-semibold">Help / User Guide</h2>
+      <p class="text-sm text-slate-600 mt-1">A complete, clear guide for daily use.</p>
+    </div>
+
+    <div class="mt-6 space-y-4">
+      <div class="bg-white border rounded-xl p-4">
+        <h3 class="font-semibold">1) Typical daily workflow</h3>
+        <ol class="list-decimal ml-5 mt-2 text-sm text-slate-700 space-y-1">
+          <li>Create items (e.g. Rice, Oil, Eggs) with correct <b>Unit</b> and <b>Threshold</b>.</li>
+          <li>When goods arrive, open the item and record <b>Stock in</b> quantity.</li>
+          <li>When goods are used, record <b>Stock out</b> quantity.</li>
+          <li>Set thresholds so you get Telegram alerts when stock is low.</li>
+          <li>Use <b>Movements</b> to review history and reconcile.</li>
+        </ol>
+      </div>
+
+      <div class="bg-white border rounded-xl p-4">
+        <h3 class="font-semibold">2) Field meanings (what to fill in)</h3>
+        <div class="mt-2 text-sm text-slate-700 space-y-2">
+          <div><b>Quantity</b>: the amount coming in or going out. Must be greater than 0.</div>
+          <div><b>Unit</b>: kg / pack / box / bottle / pcs… choose one and keep consistent.</div>
+          <div><b>Note</b>: optional. Use for supplier, invoice number, batch, shift, meal, or usage.</div>
+          <div><b>Threshold</b>: when <i>Stock &lt; Threshold</i>, it becomes “low stock” and can notify Telegram.</div>
+        </div>
+      </div>
+
+      <div class="bg-white border rounded-xl p-4">
+        <h3 class="font-semibold">3) How stock is calculated</h3>
+        <div class="mt-2 text-sm text-slate-700 space-y-2">
+          <div><b>Stock</b> = sum(Stock in) - sum(Stock out)</div>
+          <div>Example: in 20kg, out 3kg, out 2kg → stock = 20 - 3 - 2 = 15kg</div>
+        </div>
+      </div>
+
+      <div class="bg-white border rounded-xl p-4">
+        <h3 class="font-semibold">4) Telegram low-stock alerts</h3>
+        <div class="mt-2 text-sm text-slate-700 space-y-2">
+          <div>Configure in <b>install.php</b> or in <b>config.local.php</b>.</div>
+          <div>Alerts are throttled to avoid spam (see <b>TELEGRAM_THROTTLE_MINUTES</b>).</div>
+        </div>
+      </div>
+
+      <div class="bg-white border rounded-xl p-4">
+        <h3 class="font-semibold">5) Account & security</h3>
+        <div class="mt-2 text-sm text-slate-700 space-y-2">
+          <div>Go to <b>Account</b> to change password and create staff users.</div>
+          <div>Recommendation: do not keep the default admin password.</div>
+          <div>If using MySQL, store credentials in <b>config.local.php</b> (not on GitHub).</div>
+        </div>
+      </div>
+
+      <div class="bg-white border rounded-xl p-4">
+        <h3 class="font-semibold">6) Troubleshooting</h3>
+        <ul class="list-disc ml-5 mt-2 text-sm text-slate-700 space-y-1">
+          <li><b>403/404</b>: check files are deployed to <code>public_html/</code>.</li>
+          <li><b>DB connection error</b>: re-check DB_HOST/DB_NAME/DB_USER/DB_PASSWORD and DB_DRIVER.</li>
+          <li><b>Telegram not sending</b>: check token/chat_id and Hostinger outbound HTTP is allowed.</li>
+        </ul>
+      </div>
+    </div>
+    <?php
+    $html = (string)ob_get_clean();
+    render('Help - ' . APP_NAME, $html, true);
 }
 
 if ($page === 'account') {

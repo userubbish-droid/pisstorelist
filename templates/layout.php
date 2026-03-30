@@ -16,6 +16,7 @@
           <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=items">Items</a>
           <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=movements">Movements</a>
           <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=account">Account</a>
+          <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=help">Help</a>
         </div>
         <form method="post" action="/logout.php">
           <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
