@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>登录 - 食堂厨房库存</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900">
+    <div class="min-h-screen flex items-center justify-center px-4">
+      <div class="w-full max-w-md bg-white border rounded-xl p-6 shadow-sm">
+        <h1 class="text-xl font-semibold">登录</h1>
+        <p class="text-sm text-slate-600 mt-1">仅供校内食堂厨房使用</p>
+
+        {% if error %}
+        <div class="mt-4 p-3 rounded bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+          {{ error }}
+        </div>
+        {% endif %}
+
+        <form class="mt-5 space-y-3" method="post" action="/login">
+          <div>
+            <label class="text-sm text-slate-700">账号</label>
+            <input name="username" class="mt-1 w-full border rounded px-3 py-2" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-700">密码</label>
+            <input name="password" type="password" class="mt-1 w-full border rounded px-3 py-2" required />
+          </div>
+          <button class="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800" type="submit">
+            登录
+          </button>
+        </form>
+
+        <div class="mt-4 text-xs text-slate-500">
+          首次启动会按 <code class="px-1 bg-slate-100 rounded">.env</code> 里的 ADMIN_USERNAME/ADMIN_PASSWORD 自动创建管理员。
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

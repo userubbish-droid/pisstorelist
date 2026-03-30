@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div>
+      <h2 class="text-lg font-semibold">物品库存</h2>
+      <p class="text-sm text-slate-600 mt-1">当前低库存：<span class="font-semibold">{{ low_count }}</span> 个</p>
+    </div>
+    <form method="post" action="/low-stock/check">
+      <button class="text-sm px-3 py-2 rounded border bg-white hover:bg-slate-50" type="submit">检查低库存并提醒</button>
+    </form>
+  </div>
+
+  <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-slate-700">
+        <tr>
+          <th class="text-left p-3">物品</th>
+          <th class="text-left p-3">库存</th>
+          <th class="text-left p-3">阈值</th>
+          <th class="text-left p-3">单位</th>
+          <th class="text-left p-3">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+          {% set is_low = (it["stock"]|float) < (it["threshold"]|float) %}
+          <tr class="border-t {% if is_low %}bg-amber-50{% endif %}">
+            <td class="p-3 font-medium">
+              <a class="hover:underline" href="/items/{{ it['id'] }}">{{ it["name"] }}</a>
+            </td>
+            <td class="p-3 {% if is_low %}text-amber-700 font-semibold{% endif %}">{{ it["stock"] }}</td>
+            <td class="p-3">{{ it["threshold"] }}</td>
+            <td class="p-3">{{ it["unit"] }}</td>
+            <td class="p-3">
+              <a class="text-slate-700 hover:underline" href="/items/{{ it['id'] }}">记录进货/领用</a>
+            </td>
+          </tr>
+        {% endfor %}
+        {% if not items %}
+          <tr class="border-t">
+            <td class="p-6 text-center text-slate-500" colspan="5">还没有物品，先在下方新增。</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mt-6 bg-white border rounded-xl p-4">
+    <h3 class="font-semibold">新增物品</h3>
+    <form class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3" method="post" action="/items">
+      <div class="md:col-span-2">
+        <label class="text-sm text-slate-700">名称</label>
+        <input name="name" class="mt-1 w-full border rounded px-3 py-2" placeholder="如：大米" required />
+      </div>
+      <div>
+        <label class="text-sm text-slate-700">单位</label>
+        <input name="unit" class="mt-1 w-full border rounded px-3 py-2" placeholder="kg / 包 / 箱" value="kg" />
+      </div>
+      <div>
+        <label class="text-sm text-slate-700">阈值</label>
+        <input name="threshold" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" value="0" />
+      </div>
+      <div class="md:col-span-4">
+        <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">新增</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div>
+      <h2 class="text-lg font-semibold">流水（最近 300 条）</h2>
+      <p class="text-sm text-slate-600 mt-1">入库/出库都会在这里记录。</p>
+    </div>
+  </div>
+
+  <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-slate-700">
+        <tr>
+          <th class="text-left p-3">时间</th>
+          <th class="text-left p-3">物品</th>
+          <th class="text-left p-3">类型</th>
+          <th class="text-left p-3">数量</th>
+          <th class="text-left p-3">备注</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in moves %}
+          <tr class="border-t">
+            <td class="p-3 text-slate-600">{{ m["created_at"] }}</td>
+            <td class="p-3 font-medium">
+              <a class="hover:underline" href="/items/{{ m['item_id'] }}">{{ m["item_name"] }}</a>
+            </td>
+            <td class="p-3">
+              {% if m["kind"] == "IN" %}
+                <span class="text-emerald-700 font-semibold">入库</span>
+              {% else %}
+                <span class="text-rose-700 font-semibold">出库</span>
+              {% endif %}
+            </td>
+            <td class="p-3">{{ m["qty"] }}{{ m["item_unit"] }}</td>
+            <td class="p-3 text-slate-700">{{ m["note"] or "" }}</td>
+          </tr>
+        {% endfor %}
+        {% if not moves %}
+          <tr class="border-t">
+            <td class="p-6 text-center text-slate-500" colspan="5">暂无流水记录。</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
