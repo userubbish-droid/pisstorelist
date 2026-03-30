@@ -1,0 +1,7 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+</IfModule>
+
+# 禁止访问 .git（防止泄露仓库信息）
+RedirectMatch 404 /\.git
+

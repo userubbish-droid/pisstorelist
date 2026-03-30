@@ -1,0 +1,3 @@
+data/app.db
+data/installed.lock
+*.log
