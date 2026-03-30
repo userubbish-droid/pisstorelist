@@ -18,7 +18,11 @@ function get_flash(): ?string {
 function start_app_session(): void {
     if (session_status() === PHP_SESSION_ACTIVE) return;
 
-    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    // Hostinger / proxies may terminate TLS and forward to PHP over HTTP.
+    // Prefer X-Forwarded-Proto when present.
+    $xfp = strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+    $isHttps = ($xfp === 'https')
+        || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || (isset($_SERVER['SERVER_PORT']) && (int)$_SERVER['SERVER_PORT'] === 443);
 
     session_set_cookie_params([

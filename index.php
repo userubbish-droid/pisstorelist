@@ -44,7 +44,7 @@ if ($page === 'login') {
         $u = (string)($_POST['username'] ?? '');
         $p = (string)($_POST['password'] ?? '');
         if (login_attempt($u, $p)) {
-            redirect_to('/index.php?page=items');
+            redirect_to('/index.php?page=home');
         }
         $error = 'Invalid username or password';
     } else {
