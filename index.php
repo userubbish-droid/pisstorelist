@@ -23,6 +23,7 @@ ensure_admin_exists(ADMIN_USERNAME, ADMIN_PASSWORD);
 function render(string $title, string $html, bool $show_nav): void {
     $content = $html;
     $flash = get_flash();
+    $active_page = (string)($_GET['page'] ?? '');
     include __DIR__ . '/templates/layout.php';
     exit;
 }
@@ -33,7 +34,7 @@ function redirect_to(string $url): void {
 }
 
 if ($page === '' || $page === 'home') {
-    if (current_user_id()) redirect_to('/index.php?page=items');
+    if (current_user_id()) redirect_to('/index.php?page=home');
     redirect_to('/index.php?page=login');
 }
 
@@ -85,7 +86,58 @@ if ($page === 'login') {
 // 下面页面都需要登录
 $uid = require_login();
 
+// Backwards compatibility (old pages)
 if ($page === 'items') {
+    redirect_to('/index.php?page=statement');
+}
+if ($page === 'transaction') {
+    redirect_to('/index.php?page=transaction');
+}
+
+if ($page === 'home') {
+    $rows = today_in_out_summary();
+    ob_start(); ?>
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <h2 class="text-lg font-semibold">Home</h2>
+        <p class="text-sm text-slate-600 mt-1">Today in/out summary (items with activity only).</p>
+      </div>
+      <div class="flex gap-2">
+        <a class="px-3 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm" href="/index.php?page=record">Record in/out</a>
+        <a class="px-3 py-2 rounded border bg-white hover:bg-slate-50 text-sm" href="/index.php?page=transaction">View transactions</a>
+      </div>
+    </div>
+
+    <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-700">
+          <tr>
+            <th class="text-left p-3">Item</th>
+            <th class="text-left p-3">IN</th>
+            <th class="text-left p-3">OUT</th>
+            <th class="text-left p-3">Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php if (empty($rows)) : ?>
+            <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="4">No in/out recorded today.</td></tr>
+          <?php else: foreach ($rows as $r): ?>
+            <tr class="border-t">
+              <td class="p-3 font-medium"><?= h((string)$r['item_name']) ?></td>
+              <td class="p-3 text-emerald-700 font-semibold"><?= h(fmt_num((float)$r['qty_in'])) ?></td>
+              <td class="p-3 text-rose-700 font-semibold"><?= h(fmt_num((float)$r['qty_out'])) ?></td>
+              <td class="p-3"><?= h((string)$r['item_unit']) ?></td>
+            </tr>
+          <?php endforeach; endif; ?>
+        </tbody>
+      </table>
+    </div>
+    <?php
+    $html = (string)ob_get_clean();
+    render('Home - ' . APP_NAME, $html, true);
+}
+
+if ($page === 'add') {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         csrf_check();
         $name = (string)($_POST['name'] ?? '');
@@ -93,7 +145,7 @@ if ($page === 'items') {
         $threshold = (float)($_POST['threshold'] ?? 0);
         if (trim($name) === '') {
             set_flash('Name is required');
-            redirect_to('/index.php?page=items');
+            redirect_to('/index.php?page=add');
         }
         if ($threshold < 0) $threshold = 0;
         try {
@@ -102,20 +154,51 @@ if ($page === 'items') {
         } catch (Throwable $e) {
             set_flash('Create failed: duplicate name or invalid input');
         }
-        redirect_to('/index.php?page=items');
+        redirect_to('/index.php?page=add');
     }
 
+    ob_start(); ?>
+    <div>
+      <h2 class="text-lg font-semibold">Add</h2>
+      <p class="text-sm text-slate-600 mt-1">Create a new item (product).</p>
+    </div>
+    <div class="mt-6 bg-white border rounded-xl p-4">
+      <h3 class="font-semibold">New item</h3>
+      <form class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3" method="post" action="/index.php?page=add">
+        <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
+        <div class="md:col-span-2">
+          <label class="text-sm text-slate-700">Name</label>
+          <input name="name" class="mt-1 w-full border rounded px-3 py-2" placeholder="e.g. Rice" required />
+        </div>
+        <div>
+          <label class="text-sm text-slate-700">Unit</label>
+          <input name="unit" class="mt-1 w-full border rounded px-3 py-2" placeholder="kg / pack / box" value="kg" />
+        </div>
+        <div>
+          <label class="text-sm text-slate-700">Threshold</label>
+          <input name="threshold" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" value="0" />
+        </div>
+        <div class="md:col-span-4">
+          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">Create</button>
+        </div>
+      </form>
+    </div>
+    <?php
+    $html = (string)ob_get_clean();
+    render('Add - ' . APP_NAME, $html, true);
+}
+
+if ($page === 'statement') {
     $items = items_with_stock();
     $lowCount = 0;
     foreach ($items as $it) {
         if ((float)$it['stock'] < (float)$it['threshold']) $lowCount++;
     }
-
     ob_start(); ?>
     <div class="flex items-start justify-between gap-4 flex-wrap">
       <div>
-        <h2 class="text-lg font-semibold">Inventory</h2>
-        <p class="text-sm text-slate-600 mt-1">Low stock: <span class="font-semibold"><?= (int)$lowCount ?></span></p>
+        <h2 class="text-lg font-semibold">Statement</h2>
+        <p class="text-sm text-slate-600 mt-1">Current stock balance (low stock: <span class="font-semibold"><?= (int)$lowCount ?></span>).</p>
       </div>
       <form method="post" action="/index.php?page=low_check">
         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
@@ -136,47 +219,95 @@ if ($page === 'items') {
         </thead>
         <tbody>
           <?php if (empty($items)) : ?>
-            <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="5">No items yet. Create one below.</td></tr>
+            <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="5">No items yet. Create one in Add.</td></tr>
           <?php else: foreach ($items as $it) :
             $isLow = (float)$it['stock'] < (float)$it['threshold']; ?>
             <tr class="border-t <?= $isLow ? 'bg-amber-50' : '' ?>">
-              <td class="p-3 font-medium">
-                <a class="hover:underline" href="/index.php?page=item&id=<?= (int)$it['id'] ?>"><?= h((string)$it['name']) ?></a>
-              </td>
+              <td class="p-3 font-medium"><?= h((string)$it['name']) ?></td>
               <td class="p-3 <?= $isLow ? 'text-amber-700 font-semibold' : '' ?>"><?= h(fmt_num((float)$it['stock'])) ?></td>
               <td class="p-3"><?= h(fmt_num((float)$it['threshold'])) ?></td>
               <td class="p-3"><?= h((string)$it['unit']) ?></td>
-              <td class="p-3"><a class="text-slate-700 hover:underline" href="/index.php?page=item&id=<?= (int)$it['id'] ?>">Open</a></td>
+              <td class="p-3"><a class="text-slate-700 hover:underline" href="/index.php?page=item&id=<?= (int)$it['id'] ?>">Details</a></td>
             </tr>
           <?php endforeach; endif; ?>
         </tbody>
       </table>
     </div>
+    <?php
+    $html = (string)ob_get_clean();
+    render('Statement - ' . APP_NAME, $html, true);
+}
+
+if ($page === 'record') {
+    $items = items_with_stock();
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        csrf_check();
+        $itemId = (int)($_POST['item_id'] ?? 0);
+        $kind = (string)($_POST['kind'] ?? '');
+        $qty = (float)($_POST['qty'] ?? 0);
+        $note = (string)($_POST['note'] ?? '');
+        if ($itemId <= 0) {
+            set_flash('Please select an item');
+            redirect_to('/index.php?page=record');
+        }
+        if ($kind !== 'IN' && $kind !== 'OUT') {
+            set_flash('Please select IN or OUT');
+            redirect_to('/index.php?page=record');
+        }
+        if ($qty <= 0) {
+            set_flash('Quantity must be greater than 0');
+            redirect_to('/index.php?page=record');
+        }
+        add_movement($itemId, $kind, $qty, $note, $uid);
+        $item2 = item_with_stock($itemId);
+        if ($item2) {
+            maybe_notify_low_stock($item2);
+        }
+        set_flash('Saved');
+        redirect_to('/index.php?page=record');
+    }
+
+    ob_start(); ?>
+    <div>
+      <h2 class="text-lg font-semibold">Record</h2>
+      <p class="text-sm text-slate-600 mt-1">All in/out entry is done here.</p>
+    </div>
 
     <div class="mt-6 bg-white border rounded-xl p-4">
-      <h3 class="font-semibold">Create item</h3>
-      <form class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3" method="post" action="/index.php?page=items">
-        <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
+      <form class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end" method="post" action="/index.php?page=record">
+        <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>" />
         <div class="md:col-span-2">
-          <label class="text-sm text-slate-700">Name</label>
-          <input name="name" class="mt-1 w-full border rounded px-3 py-2" placeholder="e.g. Rice" required />
+          <label class="text-sm text-slate-700">Item</label>
+          <select name="item_id" class="mt-1 w-full border rounded px-3 py-2" required>
+            <option value="">Select...</option>
+            <?php foreach ($items as $it): ?>
+              <option value="<?= (int)$it['id'] ?>"><?= h((string)$it['name']) ?> (<?= h((string)$it['unit']) ?>)</option>
+            <?php endforeach; ?>
+          </select>
         </div>
         <div>
-          <label class="text-sm text-slate-700">Unit</label>
-          <input name="unit" class="mt-1 w-full border rounded px-3 py-2" placeholder="kg / 包 / 箱" value="kg" />
+          <label class="text-sm text-slate-700">Type</label>
+          <select name="kind" class="mt-1 w-full border rounded px-3 py-2" required>
+            <option value="IN">IN</option>
+            <option value="OUT">OUT</option>
+          </select>
         </div>
         <div>
-          <label class="text-sm text-slate-700">Threshold</label>
-          <input name="threshold" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" value="0" />
+          <label class="text-sm text-slate-700">Quantity</label>
+          <input name="qty" type="number" min="0.01" step="0.01" class="mt-1 w-full border rounded px-3 py-2" required />
         </div>
-        <div class="md:col-span-4">
-          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">Create</button>
+        <div class="md:col-span-5">
+          <label class="text-sm text-slate-700">Note (optional)</label>
+          <input name="note" class="mt-1 w-full border rounded px-3 py-2" placeholder="Supplier / usage / shift / invoice..." />
+        </div>
+        <div class="md:col-span-5">
+          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">Save</button>
         </div>
       </form>
     </div>
     <?php
     $html = (string)ob_get_clean();
-    render('Items - ' . APP_NAME, $html, true);
+    render('Record - ' . APP_NAME, $html, true);
 }
 
 if ($page === 'item') {
@@ -184,7 +315,7 @@ if ($page === 'item') {
     $item = $id ? item_with_stock($id) : null;
     if (!$item) {
         set_flash('Item not found');
-        redirect_to('/index.php?page=items');
+        redirect_to('/index.php?page=statement');
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -220,7 +351,7 @@ if ($page === 'item') {
     ob_start(); ?>
     <div class="flex items-start justify-between gap-4 flex-wrap">
       <div>
-        <div class="text-sm text-slate-600"><a class="hover:underline" href="/index.php?page=items">← Back to items</a></div>
+        <div class="text-sm text-slate-600"><a class="hover:underline" href="/index.php?page=statement">← Back to statement</a></div>
         <h2 class="text-xl font-semibold mt-1"><?= h((string)$item['name']) ?></h2>
         <p class="text-sm text-slate-600 mt-1">
           Stock:
@@ -285,7 +416,7 @@ if ($page === 'item') {
     <div class="mt-6 bg-white border rounded-xl overflow-hidden">
       <div class="p-4 border-b flex items-center justify-between">
         <h3 class="font-semibold">Recent movements</h3>
-        <a class="text-sm text-slate-700 hover:underline" href="/index.php?page=movements">View all</a>
+        <a class="text-sm text-slate-700 hover:underline" href="/index.php?page=transaction">View all</a>
       </div>
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-700">
@@ -331,12 +462,12 @@ if ($page === 'movements') {
     $moves = list_movements_filtered($filters, 300);
     ob_start(); ?>
     <div>
-      <h2 class="text-lg font-semibold">Movements (latest 300)</h2>
-      <p class="text-sm text-slate-600 mt-1">All stock-in and stock-out records appear here.</p>
+      <h2 class="text-lg font-semibold">Transaction</h2>
+      <p class="text-sm text-slate-600 mt-1">All stock-in and stock-out records (latest 300).</p>
     </div>
     <div class="mt-4 bg-white border rounded-xl p-4">
       <form class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end" method="get" action="/index.php">
-        <input type="hidden" name="page" value="movements" />
+        <input type="hidden" name="page" value="transaction" />
         <div class="md:col-span-2">
           <label class="text-sm text-slate-700">Item contains</label>
           <input name="q" value="<?= h((string)$filters['q']) ?>" class="mt-1 w-full border rounded px-3 py-2" placeholder="e.g. rice" />
@@ -359,7 +490,7 @@ if ($page === 'movements') {
         </div>
         <div class="md:col-span-5 flex items-center gap-2">
           <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">Filter</button>
-          <a class="px-4 py-2 rounded border bg-white hover:bg-slate-50" href="/index.php?page=movements">Reset</a>
+          <a class="px-4 py-2 rounded border bg-white hover:bg-slate-50" href="/index.php?page=transaction">Reset</a>
           <a class="px-4 py-2 rounded border bg-white hover:bg-slate-50" href="/index.php?page=movements_export&q=<?= urlencode((string)$filters['q']) ?>&kind=<?= urlencode((string)$filters['kind']) ?>&from=<?= urlencode((string)$filters['from']) ?>&to=<?= urlencode((string)$filters['to']) ?>">Export CSV</a>
         </div>
       </form>
@@ -400,7 +531,7 @@ if ($page === 'movements') {
     </div>
     <?php
     $html = (string)ob_get_clean();
-    render('Movements - ' . APP_NAME, $html, true);
+    render('Transaction - ' . APP_NAME, $html, true);
 }
 
 if ($page === 'movements_export') {

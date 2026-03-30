@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/db.php';
 
+function _db_driver(): string {
+    return defined('DB_DRIVER') ? (string)DB_DRIVER : 'sqlite';
+}
+
 function items_with_stock(): array {
     $q = db()->query(
         "SELECT i.*,
@@ -12,6 +16,29 @@ function items_with_stock(): array {
          GROUP BY i.id
          ORDER BY i.name ASC"
     );
+    return $q->fetchAll();
+}
+
+function today_in_out_summary(): array {
+    $driver = _db_driver();
+    $dayExpr = $driver === 'mysql' ? 'DATE(m.created_at)' : "date(m.created_at)";
+    $todayExpr = $driver === 'mysql' ? 'CURDATE()' : "date('now')";
+    $sql =
+        "SELECT
+            i.id AS item_id,
+            i.name AS item_name,
+            i.unit AS item_unit,
+            COALESCE(SUM(CASE WHEN m.kind='IN' THEN m.qty ELSE 0 END), 0) AS qty_in,
+            COALESCE(SUM(CASE WHEN m.kind='OUT' THEN m.qty ELSE 0 END), 0) AS qty_out
+         FROM items i
+         LEFT JOIN movements m
+           ON m.item_id = i.id
+          AND {$dayExpr} = {$todayExpr}
+         GROUP BY i.id
+         HAVING qty_in > 0 OR qty_out > 0
+         ORDER BY i.name ASC";
+
+    $q = db()->query($sql);
     return $q->fetchAll();
 }
 
