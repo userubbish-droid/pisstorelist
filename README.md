@@ -32,3 +32,11 @@ uvicorn app:app --reload --host 127.0.0.1 --port 8000
 - `TELEGRAM_CHAT_ID`
 
 当某个物品 **库存 < 阈值** 时会尝试发送提醒，并按 `TELEGRAM_THROTTLE_MINUTES` 节流（默认 360 分钟）。
+
+## 部署到 Hostinger（临时域名）
+
+你可以先用 `*.hostingersite.com` 的临时域名访问。部署到 Hostinger 后，记得在 `.env` 里把临时域名加入：
+
+- `ALLOWED_HOSTS=localhost,127.0.0.1,你的临时域名.hostingersite.com`
+
+等你买了正式域名，再把正式域名也加进来即可。
