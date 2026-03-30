@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 // Hostinger Web Hosting（PHP）直接可用的配置文件
 
-const APP_NAME = '食堂厨房库存';
+const APP_NAME = 'Canteen Kitchen Inventory';
 
 // 数据库类型：'sqlite' 或 'mysql'
 // - 共享主机上为了安全与可维护，推荐用 mysql

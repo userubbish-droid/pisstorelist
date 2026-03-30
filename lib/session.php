@@ -46,7 +46,7 @@ function csrf_check(): void {
     $token = $_POST['csrf'] ?? '';
     if (!$token || !hash_equals((string)($_SESSION['csrf'] ?? ''), (string)$token)) {
         http_response_code(400);
-        echo "请求无效，请刷新页面后重试。";
+        echo "Invalid request. Please refresh and try again.";
         exit;
     }
 }

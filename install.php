@@ -26,7 +26,7 @@ if ($isLocked && $_SERVER['REQUEST_METHOD'] !== 'POST') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($isLocked) {
         http_response_code(403);
-        $error = '已安装完成（已锁定）。如需重新安装，请先删除 data/installed.lock（不推荐）。';
+        $error = 'Already installed (locked). To reinstall, delete data/installed.lock (not recommended).';
     } else {
     csrf_check();
     $adminUser = trim((string)($_POST['admin_username'] ?? ''));
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $throttle = (int)($_POST['tg_throttle'] ?? TELEGRAM_THROTTLE_MINUTES);
 
     if ($adminUser === '' || $adminPass === '' || $secret === '') {
-        $error = '管理员账号/密码、SESSION_SECRET 不能为空';
+        $error = 'Admin username/password and SESSION_SECRET are required';
     } else {
         $driver = (string)($_POST['db_driver'] ?? (defined('DB_DRIVER') ? DB_DRIVER : 'sqlite'));
         $dbHost = trim((string)($_POST['db_host'] ?? (defined('DB_HOST') ? DB_HOST : 'localhost')));
@@ -70,31 +70,31 @@ const TELEGRAM_THROTTLE_MINUTES = {$throttle};
 PHP;
         $written = @file_put_contents(__DIR__ . '/config.php', $new);
         if ($written === false) {
-            $error = '写入 config.php 失败：请确认文件权限允许写入';
+            $error = 'Failed to write config.php. Please check file permissions.';
         } else {
             require __DIR__ . '/config.php';
             init_db();
             ensure_admin_exists(ADMIN_USERNAME, ADMIN_PASSWORD);
             @file_put_contents($lockFile, 'installed ' . date('c'));
-            $ok = '安装完成：管理员已创建，数据库已初始化。已自动锁定 install.php（data/installed.lock）。';
+            $ok = 'Installed: admin created, database initialized. install.php is now locked (data/installed.lock).';
         }
     }
     }
 }
 ?>
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>安装 - 食堂厨房库存</title>
+    <title>Install - <?= h(APP_NAME) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="bg-slate-50 text-slate-900">
     <main class="max-w-2xl mx-auto px-4 py-8">
       <div class="bg-white border rounded-xl p-6">
-        <h1 class="text-xl font-semibold">安装（Hostinger Web Hosting）</h1>
-        <p class="text-sm text-slate-600 mt-1">初始化 SQLite 数据库并创建管理员账号</p>
+        <h1 class="text-xl font-semibold">Install (Hostinger Web Hosting)</h1>
+        <p class="text-sm text-slate-600 mt-1">Initialize database and create an admin account</p>
 
         <?php if ($error): ?>
           <div class="mt-4 p-3 rounded bg-rose-50 border border-rose-200 text-rose-700 text-sm"><?= h($error) ?></div>
@@ -102,25 +102,25 @@ PHP;
         <?php if ($ok): ?>
           <div class="mt-4 p-3 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">
             <?= h($ok) ?>
-            <div class="mt-2"><a class="underline" href="/index.php?page=login">去登录</a></div>
+            <div class="mt-2"><a class="underline" href="/index.php?page=login">Go to sign in</a></div>
           </div>
         <?php endif; ?>
 
         <form class="mt-5 space-y-4" method="post">
           <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>" />
           <div class="pt-2 border-b pb-4">
-            <div class="font-semibold">数据库</div>
+            <div class="font-semibold">Database</div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
               <div>
-                <label class="text-sm text-slate-700">类型</label>
+                <label class="text-sm text-slate-700">Type</label>
                 <?php $curDriver = defined('DB_DRIVER') ? (string)DB_DRIVER : 'sqlite'; ?>
                 <select name="db_driver" class="mt-1 w-full border rounded px-3 py-2">
-                  <option value="sqlite" <?= $curDriver === 'sqlite' ? 'selected' : '' ?>>SQLite（文件）</option>
-                  <option value="mysql" <?= $curDriver === 'mysql' ? 'selected' : '' ?>>MySQL（Hostinger Database）</option>
+                  <option value="sqlite" <?= $curDriver === 'sqlite' ? 'selected' : '' ?>>SQLite (file)</option>
+                  <option value="mysql" <?= $curDriver === 'mysql' ? 'selected' : '' ?>>MySQL (Hostinger Database)</option>
                 </select>
               </div>
               <div class="md:col-span-2 text-xs text-slate-500">
-                推荐选择 MySQL（更安全）。如果选 SQLite，请确保 data/ 可写。
+                Recommended: MySQL (more secure). If using SQLite, ensure data/ is writable.
               </div>
               <div>
                 <label class="text-sm text-slate-700">MySQL Host</label>
@@ -131,34 +131,34 @@ PHP;
                 <input name="db_port" type="number" class="mt-1 w-full border rounded px-3 py-2" value="<?= (int)(defined('DB_PORT') ? (int)DB_PORT : 3306) ?>" />
               </div>
               <div>
-                <label class="text-sm text-slate-700">MySQL 数据库名</label>
+                <label class="text-sm text-slate-700">MySQL database name</label>
                 <input name="db_name" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(defined('DB_NAME') ? (string)DB_NAME : '') ?>" />
               </div>
               <div>
-                <label class="text-sm text-slate-700">MySQL 用户名</label>
+                <label class="text-sm text-slate-700">MySQL username</label>
                 <input name="db_user" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(defined('DB_USER') ? (string)DB_USER : '') ?>" />
               </div>
               <div class="md:col-span-2">
-                <label class="text-sm text-slate-700">MySQL 密码</label>
+                <label class="text-sm text-slate-700">MySQL password</label>
                 <input name="db_password" type="password" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(defined('DB_PASSWORD') ? (string)DB_PASSWORD : '') ?>" />
               </div>
             </div>
           </div>
           <div>
-            <label class="text-sm text-slate-700">管理员账号</label>
+            <label class="text-sm text-slate-700">Admin username</label>
             <input name="admin_username" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(ADMIN_USERNAME) ?>" required />
           </div>
           <div>
-            <label class="text-sm text-slate-700">管理员密码</label>
+            <label class="text-sm text-slate-700">Admin password</label>
             <input name="admin_password" type="password" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(ADMIN_PASSWORD) ?>" required />
           </div>
           <div>
-            <label class="text-sm text-slate-700">SESSION_SECRET（建议随机长字符串）</label>
+            <label class="text-sm text-slate-700">SESSION_SECRET (use a long random string)</label>
             <input name="session_secret" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(SESSION_SECRET) ?>" required />
           </div>
 
           <div class="pt-2 border-t">
-            <div class="font-semibold">Telegram（可选）</div>
+            <div class="font-semibold">Telegram (optional)</div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
               <div>
                 <label class="text-sm text-slate-700">Bot Token</label>
@@ -169,17 +169,17 @@ PHP;
                 <input name="tg_chat" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(TELEGRAM_CHAT_ID) ?>" />
               </div>
               <div>
-                <label class="text-sm text-slate-700">节流分钟</label>
+                <label class="text-sm text-slate-700">Throttle minutes</label>
                 <input name="tg_throttle" type="number" class="mt-1 w-full border rounded px-3 py-2" value="<?= (int)TELEGRAM_THROTTLE_MINUTES ?>" />
               </div>
             </div>
           </div>
 
-          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">初始化并保存配置</button>
+          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">Install & save</button>
         </form>
 
         <div class="mt-4 text-xs text-slate-500">
-          安装完成后会自动锁定（创建 <code class="px-1 bg-slate-100 rounded">data/installed.lock</code>），避免 GitHub 同步后反复暴露安装页。
+          After installation, this page is locked by <code class="px-1 bg-slate-100 rounded">data/installed.lock</code>.
         </div>
       </div>
     </main>

@@ -13,13 +13,13 @@
       <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-4">
           <a class="font-semibold" href="/index.php?page=items"><?= htmlspecialchars(APP_NAME) ?></a>
-          <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=items">物品</a>
-          <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=movements">流水</a>
-          <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=account">账号</a>
+          <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=items">Items</a>
+          <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=movements">Movements</a>
+          <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=account">Account</a>
         </div>
         <form method="post" action="/logout.php">
           <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
-          <button class="text-sm px-3 py-1 rounded border hover:bg-slate-50" type="submit">退出</button>
+          <button class="text-sm px-3 py-1 rounded border hover:bg-slate-50" type="submit">Logout</button>
         </form>
       </div>
     </nav>

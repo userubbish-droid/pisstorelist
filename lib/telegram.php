@@ -78,11 +78,11 @@ function maybe_notify_low_stock(array $item_with_stock): bool {
     $unit = (string)$item_with_stock['unit'];
     $fmt = fn(float $v) => rtrim(rtrim(sprintf('%.2f', $v), '0'), '.');
     $text =
-        "【库存不足提醒】\n" .
-        "物品：{$name}\n" .
-        "当前库存：" . $fmt($stock) . "{$unit}\n" .
-        "阈值：" . $fmt($threshold) . "{$unit}\n" .
-        "请及时补货。";
+        "[Low stock alert]\n" .
+        "Item: {$name}\n" .
+        "Stock: " . $fmt($stock) . "{$unit}\n" .
+        "Threshold: " . $fmt($threshold) . "{$unit}\n" .
+        "Please restock.";
 
     if (telegram_send_message($text)) {
         notif_touch((int)$item_with_stock['id'], $stock);
