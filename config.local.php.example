@@ -1,0 +1,17 @@
+<?php
+declare(strict_types=1);
+
+// 这个文件不要提交到 GitHub（用于线上覆盖敏感配置）
+// 复制为 config.local.php 并填写
+
+const DB_DRIVER = 'mysql';
+const DB_HOST = 'localhost';
+const DB_PORT = 3306;
+const DB_NAME = 'u870568714_camazcanttin';
+const DB_USER = 'u870568714_camazcanttin';
+const DB_PASSWORD = '请填你的密码';
+
+// 你也可以在这里覆盖 Telegram
+// const TELEGRAM_BOT_TOKEN = '...';
+// const TELEGRAM_CHAT_ID = '...';
+

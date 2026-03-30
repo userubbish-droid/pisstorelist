@@ -2,6 +2,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
+if (file_exists(__DIR__ . '/config.local.php')) {
+    require_once __DIR__ . '/config.local.php';
+}
 require_once __DIR__ . '/lib/db.php';
 require_once __DIR__ . '/lib/session.php';
 require_once __DIR__ . '/lib/auth.php';
@@ -36,12 +39,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($adminUser === '' || $adminPass === '' || $secret === '') {
         $error = '管理员账号/密码、SESSION_SECRET 不能为空';
     } else {
+        $driver = (string)($_POST['db_driver'] ?? (defined('DB_DRIVER') ? DB_DRIVER : 'sqlite'));
+        $dbHost = trim((string)($_POST['db_host'] ?? (defined('DB_HOST') ? DB_HOST : 'localhost')));
+        $dbPort = (int)($_POST['db_port'] ?? (defined('DB_PORT') ? DB_PORT : 3306));
+        $dbName = trim((string)($_POST['db_name'] ?? (defined('DB_NAME') ? DB_NAME : '')));
+        $dbUser = trim((string)($_POST['db_user'] ?? (defined('DB_USER') ? DB_USER : '')));
+        $dbPass = (string)($_POST['db_password'] ?? (defined('DB_PASSWORD') ? DB_PASSWORD : ''));
+
         $new = <<<PHP
 <?php
 declare(strict_types=1);
 
 const APP_NAME = '食堂厨房库存';
+
+const DB_DRIVER = '{$driver}';
 const DB_PATH = __DIR__ . '/data/app.db';
+const DB_HOST = '{$dbHost}';
+const DB_PORT = {$dbPort};
+const DB_NAME = '{$dbName}';
+const DB_USER = '{$dbUser}';
+const DB_PASSWORD = '{$dbPass}';
+
 const SESSION_SECRET = '{$secret}';
 const ADMIN_USERNAME = '{$adminUser}';
 const ADMIN_PASSWORD = '{$adminPass}';
@@ -90,6 +108,42 @@ PHP;
 
         <form class="mt-5 space-y-4" method="post">
           <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>" />
+          <div class="pt-2 border-b pb-4">
+            <div class="font-semibold">数据库</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+              <div>
+                <label class="text-sm text-slate-700">类型</label>
+                <?php $curDriver = defined('DB_DRIVER') ? (string)DB_DRIVER : 'sqlite'; ?>
+                <select name="db_driver" class="mt-1 w-full border rounded px-3 py-2">
+                  <option value="sqlite" <?= $curDriver === 'sqlite' ? 'selected' : '' ?>>SQLite（文件）</option>
+                  <option value="mysql" <?= $curDriver === 'mysql' ? 'selected' : '' ?>>MySQL（Hostinger Database）</option>
+                </select>
+              </div>
+              <div class="md:col-span-2 text-xs text-slate-500">
+                推荐选择 MySQL（更安全）。如果选 SQLite，请确保 data/ 可写。
+              </div>
+              <div>
+                <label class="text-sm text-slate-700">MySQL Host</label>
+                <input name="db_host" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(defined('DB_HOST') ? (string)DB_HOST : 'localhost') ?>" />
+              </div>
+              <div>
+                <label class="text-sm text-slate-700">MySQL Port</label>
+                <input name="db_port" type="number" class="mt-1 w-full border rounded px-3 py-2" value="<?= (int)(defined('DB_PORT') ? (int)DB_PORT : 3306) ?>" />
+              </div>
+              <div>
+                <label class="text-sm text-slate-700">MySQL 数据库名</label>
+                <input name="db_name" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(defined('DB_NAME') ? (string)DB_NAME : '') ?>" />
+              </div>
+              <div>
+                <label class="text-sm text-slate-700">MySQL 用户名</label>
+                <input name="db_user" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(defined('DB_USER') ? (string)DB_USER : '') ?>" />
+              </div>
+              <div class="md:col-span-2">
+                <label class="text-sm text-slate-700">MySQL 密码</label>
+                <input name="db_password" type="password" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(defined('DB_PASSWORD') ? (string)DB_PASSWORD : '') ?>" />
+              </div>
+            </div>
+          </div>
           <div>
             <label class="text-sm text-slate-700">管理员账号</label>
             <input name="admin_username" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(ADMIN_USERNAME) ?>" required />

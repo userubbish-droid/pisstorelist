@@ -38,13 +38,24 @@ function notif_state(int $item_id): ?array {
 }
 
 function notif_touch(int $item_id, float $stock): void {
-    $stmt = db()->prepare(
-        "INSERT INTO telegram_notif_state(item_id, last_sent_at, last_sent_stock)
-         VALUES(?, datetime('now'), ?)
-         ON CONFLICT(item_id) DO UPDATE SET
-           last_sent_at = datetime('now'),
-           last_sent_stock = excluded.last_sent_stock"
-    );
+    $driver = defined('DB_DRIVER') ? (string)DB_DRIVER : 'sqlite';
+    if ($driver === 'mysql') {
+        $stmt = db()->prepare(
+            "INSERT INTO telegram_notif_state(item_id, last_sent_at, last_sent_stock)
+             VALUES(?, NOW(), ?)
+             ON DUPLICATE KEY UPDATE
+               last_sent_at = NOW(),
+               last_sent_stock = VALUES(last_sent_stock)"
+        );
+    } else {
+        $stmt = db()->prepare(
+            "INSERT INTO telegram_notif_state(item_id, last_sent_at, last_sent_stock)
+             VALUES(?, datetime('now'), ?)
+             ON CONFLICT(item_id) DO UPDATE SET
+               last_sent_at = datetime('now'),
+               last_sent_stock = excluded.last_sent_stock"
+        );
+    }
     $stmt->execute([$item_id, $stock]);
 }
 
