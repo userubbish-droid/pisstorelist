@@ -29,7 +29,9 @@ function start_app_session(): void {
         'lifetime' => 0,
         'path' => '/',
         'httponly' => true,
-        'secure' => $isHttps,
+        // In shared hosting behind proxies, HTTPS detection can be inconsistent.
+        // Non-secure cookies still work over HTTPS, but secure cookies may fail to set if misdetected.
+        'secure' => false,
         'samesite' => 'Lax',
     ]);
 
