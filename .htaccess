@@ -5,3 +5,6 @@
 # 禁止访问 .git（防止泄露仓库信息）
 RedirectMatch 404 /\.git
 
+# 禁止直接访问本地配置覆盖文件
+RedirectMatch 404 /config\.local\.php
+

@@ -3,6 +3,18 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config.php';
 
+function set_flash(string $msg): void {
+    start_app_session();
+    $_SESSION['flash'] = $msg;
+}
+
+function get_flash(): ?string {
+    start_app_session();
+    $msg = $_SESSION['flash'] ?? null;
+    unset($_SESSION['flash']);
+    return is_string($msg) ? $msg : null;
+}
+
 function start_app_session(): void {
     if (session_status() === PHP_SESSION_ACTIVE) return;
 
@@ -34,7 +46,7 @@ function csrf_check(): void {
     $token = $_POST['csrf'] ?? '';
     if (!$token || !hash_equals((string)($_SESSION['csrf'] ?? ''), (string)$token)) {
         http_response_code(400);
-        echo "Bad Request (CSRF)";
+        echo "请求无效，请刷新页面后重试。";
         exit;
     }
 }

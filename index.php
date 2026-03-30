@@ -7,6 +7,7 @@ if (file_exists(__DIR__ . '/config.local.php')) {
 }
 require_once __DIR__ . '/lib/db.php';
 require_once __DIR__ . '/lib/session.php';
+require_once __DIR__ . '/lib/util.php';
 require_once __DIR__ . '/lib/auth.php';
 require_once __DIR__ . '/lib/inventory.php';
 require_once __DIR__ . '/lib/telegram.php';
@@ -21,8 +22,7 @@ ensure_admin_exists(ADMIN_USERNAME, ADMIN_PASSWORD);
 
 function render(string $title, string $html, bool $show_nav): void {
     $content = $html;
-    $flash = $_SESSION['flash'] ?? null;
-    unset($_SESSION['flash']);
+    $flash = get_flash();
     include __DIR__ . '/templates/layout.php';
     exit;
 }
@@ -91,11 +91,16 @@ if ($page === 'items') {
         $name = (string)($_POST['name'] ?? '');
         $unit = (string)($_POST['unit'] ?? 'kg');
         $threshold = (float)($_POST['threshold'] ?? 0);
+        if (trim($name) === '') {
+            set_flash('名称不能为空');
+            redirect_to('/index.php?page=items');
+        }
+        if ($threshold < 0) $threshold = 0;
         try {
             create_item($name, $unit, $threshold);
-            $_SESSION['flash'] = '已新增物品';
+            set_flash('已新增物品');
         } catch (Throwable $e) {
-            $_SESSION['flash'] = '新增失败：可能重名或数据无效';
+            set_flash('新增失败：可能重名或数据无效');
         }
         redirect_to('/index.php?page=items');
     }
@@ -136,11 +141,11 @@ if ($page === 'items') {
             $isLow = (float)$it['stock'] < (float)$it['threshold']; ?>
             <tr class="border-t <?= $isLow ? 'bg-amber-50' : '' ?>">
               <td class="p-3 font-medium">
-                <a class="hover:underline" href="/index.php?page=item&id=<?= (int)$it['id'] ?>"><?= htmlspecialchars((string)$it['name']) ?></a>
+                <a class="hover:underline" href="/index.php?page=item&id=<?= (int)$it['id'] ?>"><?= h((string)$it['name']) ?></a>
               </td>
-              <td class="p-3 <?= $isLow ? 'text-amber-700 font-semibold' : '' ?>"><?= htmlspecialchars((string)$it['stock']) ?></td>
-              <td class="p-3"><?= htmlspecialchars((string)$it['threshold']) ?></td>
-              <td class="p-3"><?= htmlspecialchars((string)$it['unit']) ?></td>
+              <td class="p-3 <?= $isLow ? 'text-amber-700 font-semibold' : '' ?>"><?= h(fmt_num((float)$it['stock'])) ?></td>
+              <td class="p-3"><?= h(fmt_num((float)$it['threshold'])) ?></td>
+              <td class="p-3"><?= h((string)$it['unit']) ?></td>
               <td class="p-3"><a class="text-slate-700 hover:underline" href="/index.php?page=item&id=<?= (int)$it['id'] ?>">记录进货/领用</a></td>
             </tr>
           <?php endforeach; endif; ?>
@@ -178,7 +183,7 @@ if ($page === 'item') {
     $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
     $item = $id ? item_with_stock($id) : null;
     if (!$item) {
-        $_SESSION['flash'] = '物品不存在';
+        set_flash('物品不存在');
         redirect_to('/index.php?page=items');
     }
 
@@ -186,20 +191,25 @@ if ($page === 'item') {
         csrf_check();
         $action = (string)($_POST['action'] ?? '');
         if ($action === 'threshold') {
-            update_threshold($id, (float)($_POST['threshold'] ?? 0));
-            $_SESSION['flash'] = '阈值已保存';
+            $t = (float)($_POST['threshold'] ?? 0);
+            if ($t < 0) $t = 0;
+            update_threshold($id, $t);
+            set_flash('阈值已保存');
             redirect_to('/index.php?page=item&id=' . $id);
         }
         if ($action === 'in' || $action === 'out') {
             $qty = (float)($_POST['qty'] ?? 0);
             $note = (string)($_POST['note'] ?? '');
-            if ($qty < 0) $qty = 0;
+            if ($qty <= 0) {
+                set_flash('数量必须大于 0');
+                redirect_to('/index.php?page=item&id=' . $id);
+            }
             add_movement($id, $action === 'in' ? 'IN' : 'OUT', $qty, $note, $uid);
             $item2 = item_with_stock($id);
             if ($item2) {
                 maybe_notify_low_stock($item2);
             }
-            $_SESSION['flash'] = '已记录';
+            set_flash('已记录');
             redirect_to('/index.php?page=item&id=' . $id);
         }
     }
@@ -211,13 +221,13 @@ if ($page === 'item') {
     <div class="flex items-start justify-between gap-4 flex-wrap">
       <div>
         <div class="text-sm text-slate-600"><a class="hover:underline" href="/index.php?page=items">← 返回物品列表</a></div>
-        <h2 class="text-xl font-semibold mt-1"><?= htmlspecialchars((string)$item['name']) ?></h2>
+        <h2 class="text-xl font-semibold mt-1"><?= h((string)$item['name']) ?></h2>
         <p class="text-sm text-slate-600 mt-1">
           当前库存：
           <span class="font-semibold <?= $isLow ? 'text-amber-700' : '' ?>">
-            <?= htmlspecialchars((string)$item['stock']) ?><?= htmlspecialchars((string)$item['unit']) ?>
+            <?= h(fmt_num((float)$item['stock'])) ?><?= h((string)$item['unit']) ?>
           </span>
-          ，阈值：<?= htmlspecialchars((string)$item['threshold']) ?><?= htmlspecialchars((string)$item['unit']) ?>
+          ，阈值：<?= h(fmt_num((float)$item['threshold'])) ?><?= h((string)$item['unit']) ?>
         </p>
       </div>
     </div>
@@ -229,8 +239,8 @@ if ($page === 'item') {
           <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
           <input type="hidden" name="action" value="in" />
           <div>
-            <label class="text-sm text-slate-700">数量（<?= htmlspecialchars((string)$item['unit']) ?>）</label>
-            <input name="qty" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" required />
+            <label class="text-sm text-slate-700">数量（<?= h((string)$item['unit']) ?>）</label>
+            <input name="qty" type="number" min="0.01" step="0.01" class="mt-1 w-full border rounded px-3 py-2" required />
           </div>
           <div>
             <label class="text-sm text-slate-700">备注（可选）</label>
@@ -246,8 +256,8 @@ if ($page === 'item') {
           <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
           <input type="hidden" name="action" value="out" />
           <div>
-            <label class="text-sm text-slate-700">数量（<?= htmlspecialchars((string)$item['unit']) ?>）</label>
-            <input name="qty" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" required />
+            <label class="text-sm text-slate-700">数量（<?= h((string)$item['unit']) ?>）</label>
+            <input name="qty" type="number" min="0.01" step="0.01" class="mt-1 w-full border rounded px-3 py-2" required />
           </div>
           <div>
             <label class="text-sm text-slate-700">备注（可选）</label>
@@ -263,8 +273,8 @@ if ($page === 'item') {
           <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
           <input type="hidden" name="action" value="threshold" />
           <div>
-            <label class="text-sm text-slate-700">阈值（<?= htmlspecialchars((string)$item['unit']) ?>）</label>
-            <input name="threshold" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" value="<?= htmlspecialchars((string)$item['threshold']) ?>" />
+            <label class="text-sm text-slate-700">阈值（<?= h((string)$item['unit']) ?>）</label>
+            <input name="threshold" type="number" min="0" step="0.01" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(fmt_num((float)$item['threshold'])) ?>" />
           </div>
           <button class="w-full px-4 py-2 rounded border bg-white hover:bg-slate-50" type="submit">保存</button>
         </form>
@@ -291,7 +301,7 @@ if ($page === 'item') {
             <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="4">暂无流水记录。</td></tr>
           <?php else: foreach ($moves as $m): ?>
             <tr class="border-t">
-              <td class="p-3 text-slate-600"><?= htmlspecialchars((string)$m['created_at']) ?></td>
+              <td class="p-3 text-slate-600"><?= h((string)$m['created_at']) ?></td>
               <td class="p-3">
                 <?php if ($m['kind'] === 'IN') : ?>
                   <span class="text-emerald-700 font-semibold">入库</span>
@@ -299,8 +309,8 @@ if ($page === 'item') {
                   <span class="text-rose-700 font-semibold">出库</span>
                 <?php endif; ?>
               </td>
-              <td class="p-3"><?= htmlspecialchars((string)$m['qty']) ?><?= htmlspecialchars((string)$item['unit']) ?></td>
-              <td class="p-3 text-slate-700"><?= htmlspecialchars((string)($m['note'] ?? '')) ?></td>
+              <td class="p-3"><?= h(fmt_num((float)$m['qty'])) ?><?= h((string)$item['unit']) ?></td>
+              <td class="p-3 text-slate-700"><?= h((string)($m['note'] ?? '')) ?></td>
             </tr>
           <?php endforeach; endif; ?>
         </tbody>
@@ -357,6 +367,103 @@ if ($page === 'movements') {
     render('流水 - ' . APP_NAME, $html, true);
 }
 
+if ($page === 'account') {
+    $user = get_user_by_id($uid);
+    if (!$user) {
+        set_flash('账号不存在');
+        redirect_to('/index.php?page=login');
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        csrf_check();
+        $action = (string)($_POST['action'] ?? '');
+
+        if ($action === 'change_password') {
+            $old = (string)($_POST['old_password'] ?? '');
+            $new1 = (string)($_POST['new_password'] ?? '');
+            $new2 = (string)($_POST['new_password2'] ?? '');
+            if (!password_verify($old, (string)$user['password_hash'])) {
+                set_flash('旧密码不正确');
+                redirect_to('/index.php?page=account');
+            }
+            if ($new1 === '' || $new1 !== $new2) {
+                set_flash('新密码为空或两次输入不一致');
+                redirect_to('/index.php?page=account');
+            }
+            change_password($uid, $new1);
+            set_flash('密码已更新，请重新登录');
+            logout();
+            redirect_to('/index.php?page=login');
+        }
+
+        if ($action === 'create_user') {
+            $nu = (string)($_POST['new_username'] ?? '');
+            $np = (string)($_POST['new_user_password'] ?? '');
+            if ($nu === '' || $np === '') {
+                set_flash('新用户账号/密码不能为空');
+                redirect_to('/index.php?page=account');
+            }
+            try {
+                create_user($nu, $np);
+                set_flash('已创建新用户');
+            } catch (Throwable $e) {
+                set_flash('创建失败：可能重名或数据无效');
+            }
+            redirect_to('/index.php?page=account');
+        }
+    }
+
+    ob_start(); ?>
+    <div>
+      <h2 class="text-lg font-semibold">账号设置</h2>
+      <p class="text-sm text-slate-600 mt-1">当前账号：<span class="font-semibold"><?= h((string)$user['username']) ?></span></p>
+    </div>
+
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-white border rounded-xl p-4">
+        <h3 class="font-semibold">修改密码</h3>
+        <form class="mt-3 space-y-3" method="post" action="/index.php?page=account">
+          <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>" />
+          <input type="hidden" name="action" value="change_password" />
+          <div>
+            <label class="text-sm text-slate-700">旧密码</label>
+            <input name="old_password" type="password" class="mt-1 w-full border rounded px-3 py-2" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-700">新密码</label>
+            <input name="new_password" type="password" class="mt-1 w-full border rounded px-3 py-2" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-700">再输入一次新密码</label>
+            <input name="new_password2" type="password" class="mt-1 w-full border rounded px-3 py-2" required />
+          </div>
+          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">保存</button>
+        </form>
+      </div>
+
+      <div class="bg-white border rounded-xl p-4">
+        <h3 class="font-semibold">新增用户（可选）</h3>
+        <div class="text-xs text-slate-500 mt-1">用于给不同员工独立登录。</div>
+        <form class="mt-3 space-y-3" method="post" action="/index.php?page=account">
+          <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>" />
+          <input type="hidden" name="action" value="create_user" />
+          <div>
+            <label class="text-sm text-slate-700">新用户账号</label>
+            <input name="new_username" class="mt-1 w-full border rounded px-3 py-2" required />
+          </div>
+          <div>
+            <label class="text-sm text-slate-700">新用户密码</label>
+            <input name="new_user_password" type="password" class="mt-1 w-full border rounded px-3 py-2" required />
+          </div>
+          <button class="px-4 py-2 rounded border bg-white hover:bg-slate-50" type="submit">创建</button>
+        </form>
+      </div>
+    </div>
+    <?php
+    $html = (string)ob_get_clean();
+    render('账号 - ' . APP_NAME, $html, true);
+}
+
 if ($page === 'low_check') {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         redirect_to('/index.php?page=items');
@@ -367,7 +474,7 @@ if ($page === 'low_check') {
     foreach ($items as $it) {
         if (maybe_notify_low_stock($it)) $sent++;
     }
-    $_SESSION['flash'] = "低库存物品：" . count($items) . " 个；本次实际发送 Telegram：{$sent} 条";
+    set_flash("低库存物品：" . count($items) . " 个；本次实际发送 Telegram：{$sent} 条");
     redirect_to('/index.php?page=items');
 }
 

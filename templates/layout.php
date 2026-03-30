@@ -15,6 +15,7 @@
           <a class="font-semibold" href="/index.php?page=items"><?= htmlspecialchars(APP_NAME) ?></a>
           <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=items">物品</a>
           <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=movements">流水</a>
+          <a class="text-sm text-slate-600 hover:text-slate-900" href="/index.php?page=account">账号</a>
         </div>
         <form method="post" action="/logout.php">
           <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />

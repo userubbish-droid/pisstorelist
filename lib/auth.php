@@ -15,6 +15,29 @@ function ensure_admin_exists(string $username, string $password): void {
     $ins->execute([$username, $hash]);
 }
 
+function get_user_by_id(int $id): ?array {
+    $stmt = db()->prepare('SELECT * FROM users WHERE id = ?');
+    $stmt->execute([$id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function change_password(int $user_id, string $new_password): void {
+    $hash = password_hash($new_password, PASSWORD_BCRYPT);
+    $stmt = db()->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+    $stmt->execute([$hash, $user_id]);
+}
+
+function create_user(string $username, string $password): void {
+    $u = trim($username);
+    if ($u === '') {
+        throw new RuntimeException('用户名不能为空');
+    }
+    $hash = password_hash($password, PASSWORD_BCRYPT);
+    $stmt = db()->prepare('INSERT INTO users(username, password_hash) VALUES(?, ?)');
+    $stmt->execute([$u, $hash]);
+}
+
 function current_user_id(): ?int {
     start_app_session();
     $uid = $_SESSION['user_id'] ?? null;
