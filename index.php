@@ -55,9 +55,9 @@ if ($page === 'login') {
     }
 
     ob_start(); ?>
-    <div class="min-h-[70vh] flex items-center justify-center px-4">
-      <div class="w-full max-w-md bg-white border rounded-xl p-6 shadow-sm">
-        <h1 class="text-xl font-semibold">Sign in</h1>
+    <div class="min-h-[82vh] md:min-h-[70vh] flex items-center justify-center px-3 sm:px-4">
+      <div class="w-full max-w-md bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <h1 class="text-2xl font-semibold tracking-tight">Sign in</h1>
         <p class="text-sm text-slate-600 mt-1">For school canteen kitchen use</p>
         <?php if (!empty($error)) : ?>
           <div class="mt-4 p-3 rounded bg-rose-50 border border-rose-200 text-rose-700 text-sm">
@@ -68,13 +68,13 @@ if ($page === 'login') {
           <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
           <div>
             <label class="text-sm text-slate-700">Username</label>
-            <input name="username" class="mt-1 w-full border rounded px-3 py-2" required />
+            <input name="username" class="mt-1 w-full border rounded-lg px-3 py-2.5" required />
           </div>
           <div>
             <label class="text-sm text-slate-700">Password</label>
-            <input name="password" type="password" class="mt-1 w-full border rounded px-3 py-2" required />
+            <input name="password" type="password" class="mt-1 w-full border rounded-lg px-3 py-2.5" required />
           </div>
-          <button class="w-full bg-slate-900 text-white rounded px-3 py-2 hover:bg-slate-800" type="submit">Sign in</button>
+          <button class="w-full bg-slate-900 text-white rounded-lg px-3 py-2.5 hover:bg-slate-800" type="submit">Sign in</button>
         </form>
         <div class="mt-4 text-xs text-slate-500">
           Default admin: <code class="px-1 bg-slate-100 rounded"><?= htmlspecialchars(ADMIN_USERNAME) ?></code>
@@ -111,7 +111,7 @@ if ($page === 'home') {
       </div>
     </div>
 
-    <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+    <div class="mt-6 bg-white border rounded-xl overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-700">
           <tr>
@@ -174,13 +174,13 @@ if ($page === 'add') {
       </div>
     </div>
 
-    <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+    <div class="mt-6 bg-white border rounded-xl overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-700">
           <tr>
             <th class="text-left p-3">Name</th>
             <th class="text-left p-3">Stock</th>
-            <th class="text-left p-3">Threshold</th>
+            <th class="text-left p-3">Remind</th>
             <th class="text-left p-3">Unit</th>
             <th class="text-left p-3">Status</th>
             <th class="text-left p-3">Action</th>
@@ -227,7 +227,7 @@ if ($page === 'add') {
           <input name="unit" class="mt-1 w-full border rounded px-3 py-2" placeholder="kg / pack / box" value="kg" />
         </div>
         <div>
-          <label class="text-sm text-slate-700">Threshold</label>
+          <label class="text-sm text-slate-700">Remind</label>
           <input name="threshold" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" value="0" />
         </div>
         <div class="md:col-span-4">
@@ -260,13 +260,13 @@ if ($page === 'statement') {
       </form>
     </div>
 
-    <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+    <div class="mt-6 bg-white border rounded-xl overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-700">
           <tr>
             <th class="text-left p-3">Item</th>
             <th class="text-left p-3">Stock</th>
-            <th class="text-left p-3">Threshold</th>
+            <th class="text-left p-3">Remind</th>
             <th class="text-left p-3">Unit</th>
             <th class="text-left p-3">Action</th>
           </tr>
@@ -379,7 +379,7 @@ if ($page === 'item') {
             $t = (float)($_POST['threshold'] ?? 0);
             if ($t < 0) $t = 0;
             update_threshold($id, $t);
-            set_flash('Threshold saved');
+            set_flash('Remind value saved');
             redirect_to('/index.php?page=item&id=' . $id);
         }
         if ($action === 'in' || $action === 'out') {
@@ -412,7 +412,7 @@ if ($page === 'item') {
           <span class="font-semibold <?= $isLow ? 'text-amber-700' : '' ?>">
             <?= h(fmt_num((float)$item['stock'])) ?><?= h((string)$item['unit']) ?>
           </span>
-          , threshold: <?= h(fmt_num((float)$item['threshold'])) ?><?= h((string)$item['unit']) ?>
+          , remind: <?= h(fmt_num((float)$item['threshold'])) ?><?= h((string)$item['unit']) ?>
         </p>
       </div>
     </div>
@@ -453,21 +453,21 @@ if ($page === 'item') {
       </div>
 
       <div class="bg-white border rounded-xl p-4">
-        <h3 class="font-semibold">Threshold</h3>
+        <h3 class="font-semibold">Remind</h3>
         <form class="mt-3 space-y-3" method="post" action="/index.php?page=item&id=<?= $id ?>">
           <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
           <input type="hidden" name="action" value="threshold" />
           <div>
-            <label class="text-sm text-slate-700">Threshold (<?= h((string)$item['unit']) ?>)</label>
+            <label class="text-sm text-slate-700">Remind (<?= h((string)$item['unit']) ?>)</label>
             <input name="threshold" type="number" min="0" step="0.01" class="mt-1 w-full border rounded px-3 py-2" value="<?= h(fmt_num((float)$item['threshold'])) ?>" />
           </div>
           <button class="w-full px-4 py-2 rounded border bg-white hover:bg-slate-50" type="submit">Save</button>
         </form>
-        <div class="mt-3 text-xs text-slate-500">When stock is below the threshold, a Telegram alert will be sent (if configured).</div>
+        <div class="mt-3 text-xs text-slate-500">When stock is below the remind value, a Telegram alert will be sent (if configured).</div>
       </div>
     </div>
 
-    <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+    <div class="mt-6 bg-white border rounded-xl overflow-x-auto">
       <div class="p-4 border-b flex items-center justify-between">
         <h3 class="font-semibold">Recent movements</h3>
         <a class="text-sm text-slate-700 hover:underline" href="/index.php?page=transaction">View all</a>
@@ -549,7 +549,7 @@ if ($page === 'transaction') {
         </div>
       </form>
     </div>
-    <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+    <div class="mt-6 bg-white border rounded-xl overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-slate-50 text-slate-700">
           <tr>
@@ -626,10 +626,10 @@ if ($page === 'help') {
       <div class="bg-white border rounded-xl p-4">
         <h3 class="font-semibold">1) Typical daily workflow</h3>
         <ol class="list-decimal ml-5 mt-2 text-sm text-slate-700 space-y-1">
-          <li>Create items (e.g. Rice, Oil, Eggs) with correct <b>Unit</b> and <b>Threshold</b>.</li>
+          <li>Create items (e.g. Rice, Oil, Eggs) with correct <b>Unit</b> and <b>Remind</b>.</li>
           <li>When goods arrive, open the item and record <b>Stock in</b> quantity.</li>
           <li>When goods are used, record <b>Stock out</b> quantity.</li>
-          <li>Set thresholds so you get Telegram alerts when stock is low.</li>
+          <li>Set remind values so you get Telegram alerts when stock is low.</li>
           <li>Use <b>Movements</b> to review history and reconcile.</li>
         </ol>
       </div>
@@ -640,7 +640,7 @@ if ($page === 'help') {
           <div><b>Quantity</b>: the amount coming in or going out. Must be greater than 0.</div>
           <div><b>Unit</b>: kg / pack / box / bottle / pcs… choose one and keep consistent.</div>
           <div><b>Note</b>: optional. Use for supplier, invoice number, batch, shift, meal, or usage.</div>
-          <div><b>Threshold</b>: when <i>Stock &lt; Threshold</i>, it becomes “low stock” and can notify Telegram.</div>
+          <div><b>Remind</b>: when <i>Stock &lt; Remind</i>, it becomes “low stock” and can notify Telegram.</div>
         </div>
       </div>
 
