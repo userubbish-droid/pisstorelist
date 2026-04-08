@@ -162,11 +162,11 @@ if ($page === 'add') {
 
     ob_start(); ?>
     <div>
-      <h2 class="text-lg font-semibold">Add</h2>
+      <h2 class="text-lg font-semibold">Product</h2>
       <p class="text-sm text-slate-600 mt-1">Create a new item (product).</p>
     </div>
     <div class="mt-6 bg-white border rounded-xl p-4">
-      <h3 class="font-semibold">New item</h3>
+      <h3 class="font-semibold">Add item</h3>
       <form class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3" method="post" action="/index.php?page=add">
         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
         <div class="md:col-span-2">
@@ -182,13 +182,13 @@ if ($page === 'add') {
           <input name="threshold" type="number" step="0.01" class="mt-1 w-full border rounded px-3 py-2" value="0" />
         </div>
         <div class="md:col-span-4">
-          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">Create</button>
+          <button class="px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-800" type="submit">Add</button>
         </div>
       </form>
     </div>
     <?php
     $html = (string)ob_get_clean();
-    render('Add - ' . APP_NAME, $html, true);
+    render('Product - ' . APP_NAME, $html, true);
 }
 
 if ($page === 'statement') {
@@ -222,7 +222,7 @@ if ($page === 'statement') {
         </thead>
         <tbody>
           <?php if (empty($items)) : ?>
-            <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="5">No items yet. Create one in Add.</td></tr>
+            <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="5">No items yet. Create one in Product.</td></tr>
           <?php else: foreach ($items as $it) :
             $isLow = (float)$it['stock'] < (float)$it['threshold']; ?>
             <tr class="border-t <?= $isLow ? 'bg-amber-50' : '' ?>">

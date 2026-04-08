@@ -32,7 +32,7 @@
           <?php $active = (string)($active_page ?? ''); ?>
           <nav class="px-3 py-4 space-y-1.5 text-sm">
             <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='home' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=home">Home</a>
-            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='add' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=add">Add</a>
+            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='add' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=add">Product</a>
             <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='record' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=record">Record</a>
             <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='statement' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=statement">Statement</a>
             <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='transaction' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=transaction">Transaction</a>
