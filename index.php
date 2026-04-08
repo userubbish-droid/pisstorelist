@@ -160,13 +160,51 @@ if ($page === 'add') {
         redirect_to('/index.php?page=add');
     }
 
+    $items = items_with_stock();
+    $showAddForm = (string)($_GET['action'] ?? '') === 'add';
+
     ob_start(); ?>
-    <div>
-      <h2 class="text-lg font-semibold">Product</h2>
-      <p class="text-sm text-slate-600 mt-1">Create a new item (product).</p>
+    <div class="flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <h2 class="text-lg font-semibold">Product</h2>
+        <p class="text-sm text-slate-600 mt-1">Current product list. Click Add to create a new item.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <a class="px-3 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm" href="/index.php?page=add&action=add">Add</a>
+      </div>
     </div>
+
+    <div class="mt-6 bg-white border rounded-xl overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-slate-700">
+          <tr>
+            <th class="text-left p-3">Name</th>
+            <th class="text-left p-3">Stock</th>
+            <th class="text-left p-3">Threshold</th>
+            <th class="text-left p-3">Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php if (empty($items)) : ?>
+            <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="4">No products yet.</td></tr>
+          <?php else: foreach ($items as $it): ?>
+            <tr class="border-t">
+              <td class="p-3 font-medium"><?= h((string)$it['name']) ?></td>
+              <td class="p-3"><?= h(fmt_num((float)$it['stock'])) ?></td>
+              <td class="p-3"><?= h(fmt_num((float)$it['threshold'])) ?></td>
+              <td class="p-3"><?= h((string)$it['unit']) ?></td>
+            </tr>
+          <?php endforeach; endif; ?>
+        </tbody>
+      </table>
+    </div>
+
+    <?php if ($showAddForm) : ?>
     <div class="mt-6 bg-white border rounded-xl p-4">
-      <h3 class="font-semibold">Add item</h3>
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="font-semibold">Add item</h3>
+        <a class="text-sm text-slate-600 hover:underline" href="/index.php?page=add">Close</a>
+      </div>
       <form class="mt-3 grid grid-cols-1 md:grid-cols-4 gap-3" method="post" action="/index.php?page=add">
         <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
         <div class="md:col-span-2">
@@ -186,6 +224,8 @@ if ($page === 'add') {
         </div>
       </form>
     </div>
+    <?php endif; ?>
+
     <?php
     $html = (string)ob_get_clean();
     render('Product - ' . APP_NAME, $html, true);
