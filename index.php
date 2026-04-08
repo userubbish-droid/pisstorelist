@@ -164,13 +164,13 @@ if ($page === 'add') {
     $showAddForm = (string)($_GET['action'] ?? '') === 'add';
 
     ob_start(); ?>
-    <div class="flex items-start justify-between gap-4 flex-wrap">
+    <div>
       <div>
         <h2 class="text-lg font-semibold">Product</h2>
         <p class="text-sm text-slate-600 mt-1">Current product list. Click Add to create a new item.</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <a class="px-3 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm" href="/index.php?page=add&action=add">Add</a>
+        <div class="mt-3">
+          <a class="inline-flex px-3 py-2 rounded bg-slate-900 text-white hover:bg-slate-800 text-sm" href="/index.php?page=add&action=add">Add</a>
+        </div>
       </div>
     </div>
 
@@ -182,17 +182,28 @@ if ($page === 'add') {
             <th class="text-left p-3">Stock</th>
             <th class="text-left p-3">Threshold</th>
             <th class="text-left p-3">Unit</th>
+            <th class="text-left p-3">Status</th>
+            <th class="text-left p-3">Action</th>
           </tr>
         </thead>
         <tbody>
           <?php if (empty($items)) : ?>
-            <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="4">No products yet.</td></tr>
-          <?php else: foreach ($items as $it): ?>
-            <tr class="border-t">
+            <tr class="border-t"><td class="p-6 text-center text-slate-500" colspan="6">No products yet.</td></tr>
+          <?php else: foreach ($items as $it):
+            $isLow = (float)$it['stock'] < (float)$it['threshold']; ?>
+            <tr class="border-t <?= $isLow ? 'bg-amber-50' : '' ?>">
               <td class="p-3 font-medium"><?= h((string)$it['name']) ?></td>
               <td class="p-3"><?= h(fmt_num((float)$it['stock'])) ?></td>
               <td class="p-3"><?= h(fmt_num((float)$it['threshold'])) ?></td>
               <td class="p-3"><?= h((string)$it['unit']) ?></td>
+              <td class="p-3">
+                <?php if ($isLow) : ?>
+                  <span class="text-amber-700 font-semibold">Low stock</span>
+                <?php else: ?>
+                  <span class="text-emerald-700 font-semibold">OK</span>
+                <?php endif; ?>
+              </td>
+              <td class="p-3"><a class="text-slate-700 hover:underline" href="/index.php?page=item&id=<?= (int)$it['id'] ?>">Details</a></td>
             </tr>
           <?php endforeach; endif; ?>
         </tbody>
