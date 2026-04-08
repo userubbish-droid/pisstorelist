@@ -36,7 +36,7 @@ function redirect_to(string $url): void {
 // Landing: only redirect when no page specified.
 if ($page === '') {
     if (current_user_id()) {
-        redirect_to('/index.php?page=home');
+        redirect_to('/index.php?page=statement');
     }
     redirect_to('/index.php?page=login');
 }
@@ -47,7 +47,7 @@ if ($page === 'login') {
         $u = (string)($_POST['username'] ?? '');
         $p = (string)($_POST['password'] ?? '');
         if (login_attempt($u, $p)) {
-            redirect_to('/index.php?page=home');
+            redirect_to('/index.php?page=statement');
         }
         $error = 'Invalid username or password';
     } else {
@@ -93,7 +93,7 @@ $uid = require_login();
 if ($page === 'items') {
     redirect_to('/index.php?page=statement');
 }
-if ($page === 'transaction') {
+if ($page === 'movements') {
     redirect_to('/index.php?page=transaction');
 }
 
@@ -455,7 +455,7 @@ if ($page === 'item') {
     render('Item - ' . APP_NAME, $html, true);
 }
 
-if ($page === 'movements') {
+if ($page === 'transaction') {
     $filters = [
         'q' => (string)($_GET['q'] ?? ''),
         'kind' => (string)($_GET['kind'] ?? ''),
