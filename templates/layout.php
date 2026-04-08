@@ -5,39 +5,52 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?= htmlspecialchars($title ?? APP_NAME) ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root { color-scheme: light; }
+      body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+      .app-shell-bg {
+        background:
+          radial-gradient(1200px 500px at 20% -10%, #dbeafe 0%, transparent 60%),
+          radial-gradient(900px 420px at 100% 0%, #e2e8f0 0%, transparent 55%),
+          #f3f6fb;
+      }
+    </style>
   </head>
-  <body class="bg-slate-100 text-slate-900">
-    <div class="min-h-screen bg-gradient-to-br from-slate-100 via-slate-100 to-slate-200">
+  <body class="text-slate-900 app-shell-bg">
+    <div class="min-h-screen">
       <?php if (!empty($show_nav)) : ?>
       <div class="flex min-h-screen">
-        <aside class="w-72 bg-white/95 backdrop-blur border-r border-slate-200 min-h-screen sticky top-0 shadow-sm">
-          <div class="px-5 py-5 border-b border-slate-100">
-            <a class="font-semibold text-slate-900 tracking-tight" href="/index.php?page=home"><?= htmlspecialchars(APP_NAME) ?></a>
-            <div class="text-xs text-slate-500 mt-1">Kitchen inventory</div>
+        <aside class="w-72 bg-slate-950 text-slate-100 border-r border-slate-900 min-h-screen sticky top-0 shadow-xl flex flex-col">
+          <div class="px-5 py-5 border-b border-slate-800">
+            <a class="font-semibold text-white tracking-tight text-base" href="/index.php?page=home"><?= htmlspecialchars(APP_NAME) ?></a>
+            <div class="text-xs text-slate-400 mt-1">Kitchen inventory</div>
           </div>
           <?php $active = (string)($active_page ?? ''); ?>
           <nav class="px-3 py-4 space-y-1.5 text-sm">
-            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='home' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>" href="/index.php?page=home">Home</a>
-            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='add' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>" href="/index.php?page=add">Add</a>
-            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='record' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>" href="/index.php?page=record">Record</a>
-            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='statement' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>" href="/index.php?page=statement">Statement</a>
-            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='transaction' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>" href="/index.php?page=transaction">Transaction</a>
-            <div class="h-px bg-slate-100 my-3"></div>
-            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='account' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>" href="/index.php?page=account">Account</a>
-            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='help' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100' ?>" href="/index.php?page=help">Help</a>
+            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='home' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=home">Home</a>
+            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='add' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=add">Add</a>
+            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='record' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=record">Record</a>
+            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='statement' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=statement">Statement</a>
+            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='transaction' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=transaction">Transaction</a>
+            <div class="h-px bg-slate-800 my-3"></div>
+            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='account' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=account">Account</a>
+            <a class="block px-3 py-2.5 rounded-lg transition <?= $active==='help' ? 'bg-indigo-500 text-white shadow' : 'text-slate-300 hover:bg-slate-900 hover:text-white' ?>" href="/index.php?page=help">Help</a>
           </nav>
-          <div class="px-4 py-4 border-t border-slate-100 mt-auto">
+          <div class="px-4 py-4 border-t border-slate-800 mt-auto">
             <form method="post" action="/logout.php">
               <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>" />
-              <button class="w-full text-sm px-3 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition" type="submit">Logout</button>
+              <button class="w-full text-sm px-3 py-2.5 rounded-lg border border-slate-700 text-slate-100 bg-slate-900 hover:bg-slate-800 transition" type="submit">Logout</button>
             </form>
           </div>
         </aside>
         <main class="flex-1">
           <div class="max-w-6xl mx-auto px-6 py-7">
             <?php if (!empty($flash)) : ?>
-              <div class="mb-4 p-3 rounded border bg-amber-50 text-amber-800"><?= htmlspecialchars($flash) ?></div>
+              <div class="mb-5 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 shadow-sm"><?= htmlspecialchars($flash) ?></div>
             <?php endif; ?>
             <?= $content ?? '' ?>
           </div>
