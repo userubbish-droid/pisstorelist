@@ -7,7 +7,7 @@ const APP_NAME = 'Canteen Kitchen Inventory';
 
 // 数据库类型：'sqlite' 或 'mysql'
 // - 共享主机上为了安全与可维护，推荐用 mysql
-const DB_DRIVER = 'sqlite';
+const DB_DRIVER = 'mysql';
 
 // SQLite（仅在 DB_DRIVER='sqlite' 时使用）
 const DB_PATH = __DIR__ . '/data/app.db';
